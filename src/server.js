@@ -16,7 +16,7 @@ const bodyParser = require('body-parser')
 
 // Load configuration
 require('./config')
-const bot = require('./bot')
+const bot = require('./bot').bot
 
 // Start Express server
 const app = express()
@@ -25,17 +25,21 @@ app.use(bodyParser.json())
 
 // Handle / route
 app.use('/', (request, response) => {
-  bot.reply(request, response)
-    .then(success => {
-      console.log(success)
-      if (!response.headersSent) { response.status(200) }
-    }).catch(error => {
+
+  // Call bot main function
+  bot(request.body, response, (error, success) => {
+    if (error) {
       console.log('Error in your bot:', error)
       if (!response.headersSent) { response.sendStatus(400) }
-    })
+    } else if (success) {
+      console.log(success)
+      if (!response.headersSent) { response.status(200).json(success) }
+    }
+  })
+
 })
 
-if (!process.env.REQUEST_TOKEN) {
+if (!process.env.REQUEST_TOKEN.length) {
   console.log('ERROR: process.env.REQUEST_TOKEN variable in src/config.js file is empty ! You must fill this field with the request_token of your bot before launching your bot locally')
 
   process.exit(0)
